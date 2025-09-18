@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Login - MyStorageApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial; max-width: 400px; margin: 50px auto; }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="text" id="user_id" placeholder="User ID" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+  <p>New user? <a href="register.html">Register here</a></p>
+  <div id="status"></div>
+  <script>
+    const apiBase = "http://127.0.0.1:5000";
+    document.getElementById("loginForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const res = await fetch(apiBase + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: document.getElementById("user_id").value,
+          password: document.getElementById("password").value
+        })
+      });
+      const j = await res.json();
+      if(res.ok){
+        localStorage.setItem("token", j.access_token);
+        localStorage.setItem("user", JSON.stringify(j.user));
+        window.location = "app.html";
+      } else {
+        document.getElementById("status").innerText = j.error || "Login failed";
+      }
+    });
+  </script>
+</body>
+</html>

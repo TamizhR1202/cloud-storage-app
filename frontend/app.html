@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>My Storage App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: 30px auto; }
+    input, button { padding: 10px; margin: 8px 0; }
+    .file-list { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>My Storage</h2>
+  <p id="welcome"></p>
+  <form id="uploadForm">
+    <input type="file" id="file" required>
+    <button type="submit">Upload</button>
+  </form>
+  <div class="file-list">
+    <h3>Files</h3>
+    <ul id="files"></ul>
+  </div>
+  <button onclick="logout()">Logout</button>
+  <div id="status"></div>
+
+  <script>
+    const apiBase = "http://127.0.0.1:5000";
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    document.getElementById("welcome").innerText = "Welcome " + (user.name || user.user_id);
+
+    async function loadFiles(){
+      const res = await fetch(apiBase + "/list", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const j = await res.json();
+      const ul = document.getElementById("files");
+      ul.innerHTML = "";
+      if(res.ok){
+        j.files.forEach(f => {
+          const li = document.createElement("li");
+          li.innerHTML = f + 
+            ` <button onclick="downloadFile('${f}')">Download</button>` +
+            ` <button onclick="deleteFile('${f}')">Delete</button>`;
+          ul.appendChild(li);
+        });
+      } else {
+        ul.innerHTML = "<li>Failed to load files</li>";
+      }
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const f = document.getElementById("file").files[0];
+      if(!f) return;
+      const fd = new FormData();
+      fd.append("file", f);
+      const res = await fetch(apiBase + "/upload", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: fd
+      });
+      if(res.ok){ loadFiles(); }
+    });
+
+    async function downloadFile(key){
+      const res = await fetch(apiBase + "/download?key=" + encodeURIComponent(key), {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const j = await res.json();
+      if(res.ok){ window.open(j.url, "_blank"); }
+    }
+
+    async function deleteFile(key){
+      const res = await fetch(apiBase + "/delete", {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ key })
+      });
+      if(res.ok){ loadFiles(); }
+    }
+
+    function logout(){
+      localStorage.clear();
+      window.location = "login.html";
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>

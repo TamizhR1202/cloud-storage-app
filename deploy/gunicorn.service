@@ -1,0 +1,13 @@
+[Unit]
+Description=gunicorn daemon for myapp
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/myapp
+Environment="PATH=/opt/myapp/venv/bin"
+ExecStart=/opt/myapp/venv/bin/gunicorn --workers 3 --bind unix:/run/gunicorn.sock app:app
+
+[Install]
+WantedBy=multi-user.target
