@@ -1,75 +1,65 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>Register - MyStorageApp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: Arial; max-width: 400px; margin: 50px auto; }
-    input, button { width: 100%; padding: 10px; margin: 8px 0; }
-  </style>
+  <title>Register</title>
 </head>
 <body>
-  <h2>Register</h2>
-  <form id="regForm">
-    <input type="text" id="user_id" placeholder="User ID" required>
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="text" id="gender" placeholder="Gender">
-    <input type="email" id="email" placeholder="Email">
-    <input type="text" id="mobile" placeholder="Mobile (+91...)">
-    <input type="password" id="password" placeholder="Password" required>
-    <button type="submit">Register</button>
-  </form>
-  <div id="otpSection" style="display:none;">
-    <h3>Enter OTP</h3>
-    <input type="text" id="otp" placeholder="OTP code">
-    <button id="verifyBtn">Verify OTP</button>
-  </div>
-  <div id="status"></div>
-  <script>
-    const apiBase = "http://127.0.0.1:5000";
-    let currentUser = "";
+<h2>Register</h2>
+<div id="status" style="color:red;"></div>
 
-    document.getElementById("regForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const body = {
-        user_id: document.getElementById("user_id").value,
-        name: document.getElementById("name").value,
-        gender: document.getElementById("gender").value,
-        email: document.getElementById("email").value,
-        mobile: document.getElementById("mobile").value,
-        password: document.getElementById("password").value
-      };
-      currentUser = body.user_id;
-      const res = await fetch(apiBase + "/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const j = await res.json();
-      if(res.ok){
-        document.getElementById("status").innerText = "OTP sent to email/SMS.";
-        document.getElementById("otpSection").style.display = "block";
-      } else {
-        document.getElementById("status").innerText = j.error || "Register failed";
-      }
-    });
+<form id="registerForm">
+  <input type="email" id="email" placeholder="Email" required /><br>
+  <input type="password" id="password" placeholder="Password" required /><br>
+  <button type="submit">Register</button>
+</form>
 
-    document.getElementById("verifyBtn").addEventListener("click", async () => {
-      const otp = document.getElementById("otp").value;
-      const res = await fetch(apiBase + "/verify_otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: currentUser, otp: otp })
-      });
-      const j = await res.json();
-      if(res.ok){
-        alert("Verified! You can now login.");
-        window.location = "login.html";
-      } else {
-        document.getElementById("status").innerText = j.error || "OTP failed";
-      }
-    });
-  </script>
+<form id="otpForm" style="display:none;">
+  <input type="number" id="otp" placeholder="Enter OTP" required /><br>
+  <button type="submit">Verify OTP</button>
+</form>
+
+<script>
+const registerForm = document.getElementById("registerForm");
+const otpForm = document.getElementById("otpForm");
+
+registerForm.addEventListener("submit", async function(e){
+  e.preventDefault();
+  const res = await fetch("/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value
+    })
+  });
+  const j = await res.json();
+  if(res.ok){
+    registerForm.style.display = "none";
+    otpForm.style.display = "block";
+    document.getElementById("status").innerText = "OTP sent! Check your email.";
+  } else {
+    document.getElementById("status").innerText = j.detail || "Error";
+  }
+});
+
+otpForm.addEventListener("submit", async function(e){
+  e.preventDefault();
+  const res = await fetch("/verify_otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      otp: document.getElementById("otp").value
+    })
+  });
+  const j = await res.json();
+  if(res.ok){
+    document.getElementById("status").innerText = "Registration successful! You can now login.";
+    otpForm.style.display = "none";
+  } else {
+    document.getElementById("status").innerText = j.detail || "Invalid OTP";
+  }
+});
+</script>
 </body>
 </html>
